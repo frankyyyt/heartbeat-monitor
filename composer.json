@@ -1,0 +1,12 @@
+{
+    "require": {
+        "vlucas/phpdotenv": "^2.4",
+        "guzzlehttp/guzzle": "^6.2",
+        "maknz/slack": "^1.7",
+        "swiftmailer/swiftmailer": "^5.4",
+        "monolog/monolog": "^1.21"
+    },
+    "autoload": {
+        "psr-0": {"Ginja": "app/"}
+    }
+}
