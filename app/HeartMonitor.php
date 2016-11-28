@@ -90,7 +90,7 @@ class HeartMonitor
         }
 
         if ($sendMessage) {
-            $message = '@channel The queue for API server ' . $this->apiUrl . ' appears to have stopped working';
+            $message = '<!channel|channel> The queue for API server ' . $this->apiUrl . ' appears to have stopped working';
             $this->sendSlackNotifiations($message);
         }
     }
