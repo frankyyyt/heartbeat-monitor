@@ -4,7 +4,8 @@
         "guzzlehttp/guzzle": "^6.2",
         "maknz/slack": "^1.7",
         "swiftmailer/swiftmailer": "^5.4",
-        "monolog/monolog": "^1.21"
+        "monolog/monolog": "^1.21",
+        "nesbot/carbon": "^1.21"
     },
     "autoload": {
         "psr-0": {"Ginja": "app/"}
