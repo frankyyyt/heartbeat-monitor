@@ -24,3 +24,10 @@ Copy app/.env.example to app/.env and update the values for your API as appropri
 php app/HeartMonitor.php
 
 ```
+
+#Add to Cron
+Add this entry to your cron using crontab -e
+
+```
+* * * * * cd /path/to/montir && php app/HeartMonitor.php
+```
