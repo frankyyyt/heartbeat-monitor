@@ -24,7 +24,6 @@ class HeartMonitor
     public function check()
     {
         $this->guestToken = $this->getGuestToken();
-        $heartbeatDate = $this->getNewestHeartBeatDate();
         $newestHeartBeatString = $this->getNewestHeartBeatDate();
         $timestampFile = $this->getEnvWithDefault('TIMESTAMP_FILE', '.heartbeat');
 
@@ -91,7 +90,7 @@ class HeartMonitor
         }
 
         if ($sendMessage) {
-            $message = '@channel The queue for API server ' . $this->apiUrl . 'appears to have stopped working';
+            $message = '@channel The queue for API server ' . $this->apiUrl . ' appears to have stopped working';
             $this->sendSlackNotifiations($message);
         }
     }
