@@ -3,6 +3,7 @@ namespace Ginja;
 
 require "vendor/autoload.php";
 
+use Carbon\Carbon;
 use Dotenv\Dotenv;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
@@ -37,24 +38,58 @@ class HeartMonitor {
             // if the timestamps are identical then the queue has failed
             if ($previousHeartBeatString == $newestHeartBeatString) {
                 $this->log->error('Heartbeat down:' . $this->apiUrl);
-
                 $this->notifyQueueBroken();
             } else {
                 $this->log->info('Heartbeat up:' . $this->apiUrl);
 
                 // save the new timestamp
                 file_put_contents($timestampFile, $newestHeartBeatString);
+
+                // reset error notifications if the queue goes down again
+                $this->deletePropertiesFile();
             }
         }
     }
 
     /*
-     * 1) Email list of developers
-     * 2) Slack notification
+     * Send a slack notification, but avoid notification spam by only sending every 60 mins
      */
     private function notifyQueueBroken() {
-        $message = 'The queue for API server ' . $this->apiUrl . 'appears to have stopped working';
-        $this->sendSlackNotifiations($message);
+        $propertiesFile = getenv('PROPERTIES_FILE');
+        $properties = file_exists($propertiesFile) ? json_decode(file_get_contents($propertiesFile)) : [];
+        $sendMessage = true;
+
+        if (isset($properties->last_error_notification)) {
+            $now = Carbon::now();
+            $lastErrorNotifiedAt = new Carbon($properties->last_error_notification);
+            $deltaMins = $now->diffInMinutes($lastErrorNotifiedAt);
+            if ($deltaMins<60) {
+                $sendMessage = false;
+                $this->log->info('Throttled error notification');
+            } else {
+                // delete the file, resetting error notifications
+                $this->deletePropertiesFile();
+            }
+        } else {
+            // save time the last error message was sent
+            $properties['last_error_notification'] = Carbon::now()->toDateTimeString();
+            file_put_contents($propertiesFile, json_encode($properties));
+        }
+
+        if ($sendMessage) {
+            $message = 'The queue for API server ' . $this->apiUrl . 'appears to have stopped working';
+            $this->sendSlackNotifiations($message);
+        }
+    }
+
+    /*
+     * Delete the properties file if it exists
+     */
+    private function deletePropertiesFile() {
+        $propertiesFile = getenv('PROPERTIES_FILE');
+        if (file_exists($propertiesFile)) {
+            unlink($propertiesFile);
+        }
     }
 
     /*
@@ -73,36 +108,6 @@ class HeartMonitor {
             );
             $messageObj = $slack->createMessage();
             $messageObj->send($message);
-        }
-    }
-
-    protected function sendEmails($subject, $message) {
-        $transport = \Swift_SmtpTransport::newInstance("smtp.fake.com", 25);
-        $transport->setUsername("Username");
-        $transport->setPassword("Password");
-
-        $emails = explode(',', getenv('EMAIL_TO'));
-        $to = array_shirt($emails);
-        $bcc = $emails;
-
-        $email = getenv('EMAIL_FROM');
-        $name = getenv('EMAIL_NAME_FROM');
-
-        $message = Swift_Message::newInstance()
-            // Give the message a subject
-            ->setSubject($subject)
-            // Set the From address with an associative array
-            ->setFrom(array($email => $name))
-
-            // Set the To addresses with an associative array
-            ->setTo(array($to))
-
-            // Give it a body
-            ->setBody($message)
-        ;
-
-        if (!empty($bcc)) {
-            $message->setBody($bcc);
         }
     }
 
@@ -134,14 +139,13 @@ class HeartMonitor {
     private function getNewestHeartBeatDate()
     {
     	$endpoint = $this->apiUrl . getenv('SETTINGS_ENDPOINT') . '?access_token=' . $this->guestToken;
-
     	$guzzle = new \GuzzleHttp\Client();
         $response = $guzzle->request('GET', $endpoint);
-
         $settings = json_decode($response->getBody(), true);
         return $settings['data']['heartbeat_date'];
     }
 }
+
 
 $monitor = new HeartMonitor();
 $monitor->check();
