@@ -47,6 +47,9 @@ class HeartMonitor
 
                 // reset error notifications if the queue goes down again
                 $this->deletePropertiesFile();
+
+                $message = '<!channel|channel>:heartbeat: The queue for API server ' . $this->apiUrl . ' has restarted :heartbeat:';
+                $this->sendSlackNotifiations($message);
             }
         }
     }
@@ -90,7 +93,7 @@ class HeartMonitor
         }
 
         if ($sendMessage) {
-            $message = '<!channel|channel> The queue for API server ' . $this->apiUrl . ' appears to have stopped working';
+            $message = '<!channel|channel>:broken_heart: The queue for API server ' . $this->apiUrl . ' appears to have stopped working:broken_heart:';
             $this->sendSlackNotifiations($message);
         }
     }
@@ -116,8 +119,8 @@ class HeartMonitor
             $slack = new \Maknz\Slack\Client(
                 $url,
                 [
-                    'username' => 'nontgor',
-                    'icon' => ':exclamation',
+                    'username' => $this->getEnvWithDefault('SLACK_USERNAME', 'heartbeat_monitor'),
+                    'icon' => $this->getEnvWithDefault('SLACK_EMOJI', ':exclamation:'),
                 ]
             );
             $messageObj = $slack->createMessage();
