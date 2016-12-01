@@ -48,7 +48,7 @@ class HeartMonitor
                 // reset error notifications if the queue goes down again
                 $this->deletePropertiesFile();
 
-                $message = '<!channel|channel>:heartbeat: The queue for API server ' . $this->apiUrl . ' has restarted :heartbeat:';
+                $message = '<!channel|channel> :heartbeat: The queue for API server ' . $this->apiUrl . ' has restarted :heartbeat:';
                 $this->sendSlackNotifiations($message);
             }
         }
@@ -93,7 +93,7 @@ class HeartMonitor
         }
 
         if ($sendMessage) {
-            $message = '<!channel|channel>:broken_heart: The queue for API server ' . $this->apiUrl . ' appears to have stopped working:broken_heart:';
+            $message = '<!channel|channel> :broken_heart: The queue for API server ' . $this->apiUrl . ' appears to have stopped working:broken_heart:';
             $this->sendSlackNotifiations($message);
         }
     }
