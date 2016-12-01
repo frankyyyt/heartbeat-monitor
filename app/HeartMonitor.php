@@ -125,7 +125,7 @@ class HeartMonitor
                 $url,
                 [
                     'username' => $this->getEnvWithDefault('SLACK_USERNAME', 'heartbeat_monitor'),
-                    'icon' => $this->getEnvWithDefault('SLACK_EMOJI', ':exclamation:'),
+                    'icon' => $emoji
                 ]
             );
             $messageObj = $slack->createMessage();
