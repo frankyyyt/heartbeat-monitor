@@ -48,8 +48,8 @@ class HeartMonitor
                 // reset error notifications if the queue goes down again
                 $this->deletePropertiesFile();
 
-                $message = '<!channel|channel> :heartbeat: The queue for API server ' . $this->apiUrl . ' has restarted :heartbeat:';
-                $this->sendSlackNotifiations($message);
+                $message = '<!channel|channel> The queue for API server ' . $this->apiUrl . ' has restarted.';
+                $this->sendSlackNotifiations($message, true);
             }
         }
     }
@@ -93,8 +93,8 @@ class HeartMonitor
         }
 
         if ($sendMessage) {
-            $message = '<!channel|channel> :broken_heart: The queue for API server ' . $this->apiUrl . ' appears to have stopped working:broken_heart:';
-            $this->sendSlackNotifiations($message);
+            $message = '<!channel|channel> The queue for API server ' . $this->apiUrl . ' appears to have stopped working';
+            $this->sendSlackNotifiations($message, false);
         }
     }
 
@@ -112,9 +112,14 @@ class HeartMonitor
     /*
      * Send a slack notification
      */
-    protected function sendSlackNotifiations($message)
+    protected function sendSlackNotifiations($message, $beating=true)
     {
         $url = getenv('SLACK_WEBHOOK_URL');
+        $emoji = $this->getEnvWithDefault('SLACK_EMOJI_BEATING', ':heart:');
+        if (!$beating) {
+            $emoji = $this->getEnvWithDefault('SLACK_EMOJI_STOPPED', ':heart:');
+        }
+
         if (!empty($url)) {
             $slack = new \Maknz\Slack\Client(
                 $url,
