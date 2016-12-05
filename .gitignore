@@ -1,4 +1,5 @@
 app/.env
 .heartbeat
+.heartbeat.last-status
 .properties
 vendor

@@ -26,19 +26,27 @@ class HeartMonitor
         $this->guestToken = $this->getGuestToken();
         $newestHeartBeatString = $this->getNewestHeartBeatDate();
         $timestampFile = $this->getEnvWithDefault('TIMESTAMP_FILE', '.heartbeat');
+        $lastStatusFile = $this->getEnvWithDefault('TIMESTAMP_FILE', '.heartbeat').('.last-status');
+        $lastStatus = file_exists($lastStatusFile) ? file_get_contents($lastStatusFile) : null;
+
+        error_log('LAST STATUS: ' . $lastStatus);
 
         // no timestamp file means first time this has run
         if (!file_exists($timestampFile)) {
             // Write the contents back to the file
             file_put_contents($timestampFile, $newestHeartBeatString);
+            file_put_contents($lastStatusFile, 'up');
             $this->log->info('First hearbeat for ' . $this->apiUrl);
         } else {
+            // heartbeat monitor has run previously
             $previousHeartBeatString = file_get_contents($timestampFile);
 
             // if the timestamps are identical then the queue has failed
             if ($previousHeartBeatString == $newestHeartBeatString) {
                 $this->log->error('Heartbeat down:' . $this->apiUrl);
                 $this->notifyQueueBroken();
+                file_put_contents($lastStatusFile, 'down');
+
             } else {
                 $this->log->info('Heartbeat up:' . $this->apiUrl);
 
@@ -49,8 +57,11 @@ class HeartMonitor
                 $this->deletePropertiesFile();
 
                 //$message = '<!channel|channel> The queue for API server ' . $this->apiUrl . ' has restarted.';
-                $message = '<The queue for API server ' . $this->apiUrl . ' has restarted.';
-                $this->sendSlackNotifiations($message, true);
+                if ($lastStatus == 'down') {
+                    $message = 'The queue for API server ' . $this->apiUrl . ' has restarted.';
+                    $this->sendSlackNotifiations($message, true);
+                    file_put_contents($lastStatusFile, 'up');
+                }
             }
         }
     }
